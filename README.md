@@ -1,6 +1,16 @@
 # bd-status-switcher
 
+## Purpose
+
 A plugin for BetterDiscord to switch the user's status (online, afk, dnd, invisible) via keyboard shortcuts and provide an api.
+
+## Keyboard Shortcuts
+
+-   `Ctrl + Alt + o` to set your status to online
+-   `Ctrl + Alt + a` to set your status to afk
+-   `Ctrl + Alt + d` to set your status to dnd
+-   `Ctrl + Alt + i` to set your status to invisible
+-   `Ctrl + Alt + g` to show a popup with your current status (for development/debugging purposes)
 
 ## API
 
