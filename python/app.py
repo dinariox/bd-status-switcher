@@ -1,13 +1,17 @@
 # === IMPORTS =================================================================
 import sys
 import glob
+from turtle import delay
 import serial
 import time
+import requests
+import threading
 # === END IMPORTS =============================================================
 
 # === GLOBAL VARIABLES ========================================================
 BAUDRATE = 38400
 SERIAL_TIMEOUT = 1
+DISCORD_STATUS_UPDATE_INTERVAL = 3
 # === END GLOBAL VARIABLES ====================================================
 
 # === FUNCTIONS ===============================================================
@@ -42,6 +46,43 @@ def serial_ports():
         except (OSError, serial.SerialException):
             pass
     return result
+
+def acceptArduinoUpdates():
+    while True:
+        data = arduino.readline()
+        if (data):
+            try:
+                data = data.decode('utf-8').rstrip()
+                
+                if (data.startswith('status')):
+                    status = data.split(" ")[1]
+                    print(f'Arduino requested: switch status to {status}')
+                    requests.post('http://localhost:5142/', json={'status': status})
+            except:
+                pass
+
+class acceptArduinoUpdatesThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+    def run(self):
+        acceptArduinoUpdates()
+
+def checkDiscordStatus():
+    while True:
+        try:
+            resp = requests.get('http://localhost:5142/')
+            if (resp.status_code == 200):
+                print(f'Current discord status: {resp.text}')
+                arduino.write(f'setstatus {resp.text}'.encode())
+        except:
+            pass
+        time.sleep(DISCORD_STATUS_UPDATE_INTERVAL)
+    
+class checkDiscordStatusThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+    def run(self):
+        checkDiscordStatus()
 # === END FUNCTIONS ==========================================================
 
 # === MAIN ===================================================================
@@ -63,9 +104,19 @@ if __name__ == '__main__':
     # Open selected port
     arduino = serial.Serial(port=selected_port, baudrate=BAUDRATE, timeout=SERIAL_TIMEOUT)
 
+    thread1 = acceptArduinoUpdatesThread()
+    thread1.daemon = True
+    thread1.start()
+
+    thread2 = checkDiscordStatusThread()
+    thread2.daemon = True
+    thread2.start()
+
+    input()
+
     # Accept commands forever
-    while True:
-        command = input('Enter a command: ')
-        value = write_read(arduino, command)
-        print('--> ' + value)
+    # while True:
+    #     command = input('Enter a command: ')
+    #     value = write_read(arduino, command)
+    #     print('--> ' + value)
 # === END MAIN ===============================================================

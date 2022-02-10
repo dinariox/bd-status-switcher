@@ -1,0 +1,6 @@
+{
+    "port": "COM5",
+    "configuration": "FlashFreq=80,UploadSpeed=921600",
+    "board": "esp32:esp32:nodemcu-32s",
+    "sketch": "arduino\\bd-status-switcher\\bd-status-switcher.ino"
+}

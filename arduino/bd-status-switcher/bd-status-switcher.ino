@@ -1,6 +1,5 @@
 #define _NAME         "DiscordStatusSwitcher"
 #define _VERSION      "0.0.1"
-#define LED_BUILDIN   2
 #define LED_GREEN     33
 #define LED_YELLOW    32
 #define LED_RED       13
@@ -10,6 +9,8 @@
 #define BTN_RED       26
 #define BTN_WHITE     25
 String serialInput;
+String currentStatus;
+bool buttonPressed;
 
 void ledStartupAnimation() {
   const int ledPins[] = { LED_GREEN, LED_YELLOW, LED_RED, LED_WHITE };
@@ -33,10 +34,35 @@ void ledStartupAnimation() {
   delay(animDelay);
 }
 
+void setSingleLed(String color) {
+  // turn off all leds
+  digitalWrite(LED_GREEN, LOW);
+  digitalWrite(LED_YELLOW, LOW);
+  digitalWrite(LED_RED, LOW);
+  digitalWrite(LED_WHITE, LOW);
+
+  // turn on the selected led
+  if (color == "green") {
+    digitalWrite(LED_GREEN, HIGH);
+  } else if (color == "yellow") {
+    digitalWrite(LED_YELLOW, HIGH);
+  } else if (color == "red") {
+    digitalWrite(LED_RED, HIGH);
+  } else if (color == "white") {
+    digitalWrite(LED_WHITE, HIGH);
+  }
+}
+
+void emitStatus() {
+  Serial.println("status " + currentStatus);
+}
+
 void setup() {
+  currentStatus = "unknown";
+  buttonPressed = false;
+
   Serial.begin(38400);
 
-  pinMode(LED_BUILDIN,  OUTPUT);
   pinMode(LED_GREEN,    OUTPUT);
   pinMode(LED_YELLOW,   OUTPUT);
   pinMode(LED_RED,      OUTPUT);
@@ -45,8 +71,7 @@ void setup() {
   pinMode(BTN_YELLOW,   INPUT_PULLDOWN);
   pinMode(BTN_RED,      INPUT_PULLDOWN);
   pinMode(BTN_WHITE,    INPUT_PULLDOWN);
-  
-  digitalWrite(LED_BUILDIN, LOW);
+
   digitalWrite(LED_GREEN,   LOW);
   digitalWrite(LED_YELLOW,  LOW);
   digitalWrite(LED_RED,     LOW);
@@ -65,34 +90,51 @@ void loop() {
       Serial.write(_NAME);
     } else if (serialInput.equals("version")) {
       Serial.write(_VERSION);
-    } else if (serialInput.startsWith("ledon")) {
-      if (serialInput.endsWith("green")) {
-        digitalWrite(LED_GREEN, HIGH);
-        Serial.write("ledon green");
-      } else if (serialInput.endsWith("yellow")) {
-        digitalWrite(LED_YELLOW, HIGH);
-        Serial.write("ledon yellow");
-      } else if (serialInput.endsWith("red")) {
-        digitalWrite(LED_RED, HIGH);
-        Serial.write("ledon red");
-      } else if (serialInput.endsWith("white")) {
-        digitalWrite(LED_WHITE, HIGH);
-        Serial.write("ledon white");
-      }
-    } else if (serialInput.startsWith("ledoff")) {
-      if (serialInput.endsWith("green")) {
-        digitalWrite(LED_GREEN, LOW);
-        Serial.write("ledon green");
-      } else if (serialInput.endsWith("yellow")) {
-        digitalWrite(LED_YELLOW, LOW);
-        Serial.write("ledon yellow");
-      } else if (serialInput.endsWith("red")) {
-        digitalWrite(LED_RED, LOW);
-        Serial.write("ledon red");
-      } else if (serialInput.endsWith("white")) {
-        digitalWrite(LED_WHITE, LOW);
-        Serial.write("ledon white");
+    } else if (serialInput.equals("getstatus")) {
+      Serial.println(currentStatus);
+    } else if (serialInput.startsWith("setstatus")) {
+      if (serialInput.endsWith("online")) {
+        currentStatus = "online";
+        setSingleLed("green");
+      } else if (serialInput.endsWith("afk")) {
+        currentStatus = "afk";
+        setSingleLed("yellow");
+      } else if (serialInput.endsWith("dnd")) {
+        currentStatus = "dnd";
+        setSingleLed("red");
+      } else if (serialInput.endsWith("invisible")) {
+        currentStatus = "invisible";
+        setSingleLed("white");
+      } else if (serialInput.endsWith("unknown")) {
+        currentStatus = "unknown";
+        setSingleLed(""); // all leds off
       }
     }
+  }
+
+  if (digitalRead(BTN_GREEN) == HIGH && !buttonPressed) {
+    buttonPressed = true;
+    currentStatus = "online";
+    setSingleLed("green");
+    emitStatus();
+  } else if (digitalRead(BTN_YELLOW) == HIGH && !buttonPressed) {
+    buttonPressed = true;
+    currentStatus = "afk";
+    setSingleLed("yellow");
+    emitStatus();
+  } else if (digitalRead(BTN_RED) == HIGH && !buttonPressed) {
+    buttonPressed = true;
+    currentStatus = "dnd";
+    setSingleLed("red");
+    emitStatus();
+  } else if (digitalRead(BTN_WHITE) == HIGH && !buttonPressed) {
+    buttonPressed = true;
+    currentStatus = "invisible";
+    setSingleLed("white");
+    emitStatus();
+  }
+
+  if (!digitalRead(BTN_GREEN) && !digitalRead(BTN_YELLOW) && !digitalRead(BTN_RED) && !digitalRead(BTN_WHITE)) {
+    buttonPressed = false;
   }
 }
