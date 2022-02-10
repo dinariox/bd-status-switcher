@@ -64,3 +64,5 @@ It scans available COM ports (or tty on Linux) and sends the `name` command to i
 ### TODOs
 
 -   Check if the discord plugin is reachable. If not send status `unknown` to arduino
+-   Don't crash when the arduino is disconnected
+-   Disable instant LED feedback. Instead blink the led after the button press and let the status update from the thread 2 apply the static LED (feedback that the user's button press worked)

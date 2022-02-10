@@ -1,16 +1,18 @@
-#define _NAME         "DiscordStatusSwitcher"
-#define _VERSION      "0.0.1"
-#define LED_GREEN     33
-#define LED_YELLOW    32
-#define LED_RED       13
-#define LED_WHITE     12
-#define BTN_GREEN     14
-#define BTN_YELLOW    27
-#define BTN_RED       26
-#define BTN_WHITE     25
+#define _NAME                   "DiscordStatusSwitcher"
+#define _VERSION                "0.0.1"
+#define CONNECTION_LOST_TIMEOUT 10000
+#define LED_GREEN               33
+#define LED_YELLOW              32
+#define LED_RED                 13
+#define LED_WHITE               12
+#define BTN_GREEN               14
+#define BTN_YELLOW              27
+#define BTN_RED                 26
+#define BTN_WHITE               25
 String serialInput;
 String currentStatus;
 bool buttonPressed;
+int lastSerialAvailable;
 
 void ledStartupAnimation() {
   const int ledPins[] = { LED_GREEN, LED_YELLOW, LED_RED, LED_WHITE };
@@ -84,6 +86,7 @@ void setup() {
 
 void loop() {
   if (Serial.available() > 0) {
+    lastSerialAvailable = millis();
     serialInput = Serial.readStringUntil('\n');
 
     if (serialInput.equals("name")) {
@@ -136,5 +139,10 @@ void loop() {
 
   if (!digitalRead(BTN_GREEN) && !digitalRead(BTN_YELLOW) && !digitalRead(BTN_RED) && !digitalRead(BTN_WHITE)) {
     buttonPressed = false;
+  }
+
+  if (millis() - lastSerialAvailable > CONNECTION_LOST_TIMEOUT) {
+    currentStatus = "unknown";
+    setSingleLed(""); // all leds off
   }
 }

@@ -57,7 +57,7 @@ def acceptArduinoUpdates():
                 if (data.startswith('status')):
                     status = data.split(" ")[1]
                     print(f'Arduino requested: switch status to {status}')
-                    requests.post('http://localhost:5142/', json={'status': status})
+                    requests.post('http://localhost:5142/', json={'status': status}, timeout=3)
             except:
                 pass
 
