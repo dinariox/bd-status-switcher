@@ -4,7 +4,7 @@ Idea: Let the user switch their Discord status (online, afk, dnd, invisible) by 
 
 ### General TODOs
 
--   Add microphone/headphone mute status
+-   Add microphone/headphone mute status ✅
 
 ---
 
@@ -26,7 +26,7 @@ A plugin for BetterDiscord to switch the user's status (online, afk, dnd, invisi
 
 `localhost:5142`
 
--   `GET /` get the current status in plain text (online, afk, dnd, invisible)
+-   `GET /` get the current status in format `{"status": "online", "microphoneMuted": true, "headphoneMuted": false}`
 -   `POST /` switch the users status. Body must be in format `{"status": "online"}`. Returns status 200 if it successfully switched the status and 400 if the JSON or the status is invalid.
 
 ---
@@ -39,18 +39,20 @@ An Arduino program to light up leds to show the discord status it receives via a
 
 ### Serial Communication
 
-Baudrate: 38400
+Baudrate: 500000
 
 Commands to the Arduino initiated by the user/the python script:
 
 -   `name` prints the name set in the code
 -   `version` prints the version set in code
--   `setstatus <status>` where status is one of `online, afk, dnd, invisible, unknown`
+-   `setstatus <status> <microphoneMuted> <headphoneMuted>` where status is one of `online, afk, dnd, invisible, unknown` and microphoneMuted/headphoneMuted is `true` or `false`
 -   `getstatus` prints the current status
 
 Commands from the Arduino sent to the user/the python script:
 
 -   `status <status>` where status is one of `online, afk, dnd, invisible, unknown`
+-   `microphoneMuted <muted>` where muted is `true` or `false`
+-   `headphoneMuted <muted>` where muted is `true` or `false`
 
 ---
 
