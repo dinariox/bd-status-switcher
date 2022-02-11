@@ -48,7 +48,7 @@ module.exports = class StatusSwitcher {
 		this.server = http.createServer((req, res) => {
 			if (req.method === 'GET') {
 				res.writeHead(200);
-				res.end(this.getStatus());
+				res.end(JSON.stringify(this.getStatus()));
 			} else if (req.method === 'POST') {
 				let body = '';
 				req.on('data', (chunk) => {
@@ -70,7 +70,15 @@ module.exports = class StatusSwitcher {
 			let data = JSON.parse(body);
 			if (data.status) {
 				return this.switchStatus(data.status) ? 200 : 400;
+			} else if (data.microphoneMuted != undefined) {
+				this.switchMicrophone(data.microphoneMuted);
+				return 200;
+			} else if (data.headphoneMuted != undefined) {
+				this.switchHeadphones(data.headphoneMuted);
+				return 200;
 			}
+			console.log('StatusSwitcher: No valid data');
+			return 400;
 		} catch (e) {
 			console.log('StatusSwitcher: Invalid JSON');
 			return 400;
@@ -108,6 +116,11 @@ module.exports = class StatusSwitcher {
 		this.avatarAriaLabel = this.avatarEl.getAttribute('aria-label');
 		this.userStatus = this.avatarAriaLabel.split(/[, ]+/).pop().trim().toLowerCase();
 
+		this.microphoneMuteButton = document.querySelector('button[aria-label="Stummschalten"]');
+		this.microphoneMuted = this.microphoneMuteButton.getAttribute('aria-checked') === 'true';
+		this.headphoneMuteButton = document.querySelector('button[aria-label="Ein- und Ausgabe deaktivieren"]');
+		this.headphoneMuted = this.headphoneMuteButton.getAttribute('aria-checked') === 'true';
+
 		// Overrides the status text with unifyed status
 		switch (this.userStatus) {
 			case 'abwesend':
@@ -122,7 +135,21 @@ module.exports = class StatusSwitcher {
 				this.userStatus = 'invisible';
 		}
 
-		return this.userStatus;
+		return { status: this.userStatus, microphoneMuted: this.microphoneMuted, headphoneMuted: this.headphoneMuted };
+	}
+
+	switchMicrophone(mute) {
+		console.log('StatusSwitcher switched microphone (' + mute + ')');
+		if (mute != this.getStatus().microphoneMuted) {
+			this.microphoneMuteButton.click();
+		}
+	}
+
+	switchHeadphones(mute) {
+		console.log('StatusSwitcher switched headphones (' + mute + ')');
+		if (mute != this.getStatus().headphoneMuted) {
+			this.headphoneMuteButton.click();
+		}
 	}
 
 	stop() {
