@@ -61,16 +61,16 @@ void emitStatus(String status) {
   Serial.println("status " + status);
 }
 
-void emitMicrophoneStatus() {
-  if (microphoneMuted) {
+void emitMicrophoneStatus(bool mute) {
+  if (mute) {
     Serial.println("microphoneMuted true");
   } else {
     Serial.println("microphoneMuted false");
   }
 }
 
-void emitHeadphoneStatus() {
-  if (headphoneMuted) {
+void emitHeadphoneStatus(bool mute) {
+  if (mute) {
     Serial.println("headphoneMuted true");
   } else {
     Serial.println("headphoneMuted false");
@@ -135,12 +135,12 @@ void setup() {
   ledcSetup(PWM_MICROPHONE, 1000, 8);
   ledcSetup(PWM_HEADPHONE, 1000, 8);
 
-  pinMode(BTN_GREEN,      INPUT_PULLDOWN);
-  pinMode(BTN_YELLOW,     INPUT_PULLDOWN);
-  pinMode(BTN_RED,        INPUT_PULLDOWN);
-  pinMode(BTN_WHITE,      INPUT_PULLDOWN);
-  pinMode(BTN_MICROPHONE, INPUT_PULLDOWN);
-  pinMode(BTN_HEADPHONE,  INPUT_PULLDOWN);
+  pinMode(BTN_GREEN,      INPUT_PULLUP);
+  pinMode(BTN_YELLOW,     INPUT_PULLUP);
+  pinMode(BTN_RED,        INPUT_PULLUP);
+  pinMode(BTN_WHITE,      INPUT_PULLUP);
+  pinMode(BTN_MICROPHONE, INPUT_PULLUP);
+  pinMode(BTN_HEADPHONE,  INPUT_PULLUP);
 
   delay(1000);
   ledStartupAnimation();
@@ -212,47 +212,43 @@ void loop() {
     }
   }
 
-  if (digitalRead(BTN_GREEN) == HIGH && !buttonPressed) {
+  if (digitalRead(BTN_GREEN) == LOW && !buttonPressed) {
     buttonPressed = true;
     ledcWrite(PWM_GREEN, waitingBrightness);
     emitStatus("online");
-  } else if (digitalRead(BTN_YELLOW) == HIGH && !buttonPressed) {
+  } else if (digitalRead(BTN_YELLOW) == LOW && !buttonPressed) {
     buttonPressed = true;
     ledcWrite(PWM_YELLOW, waitingBrightness);
     emitStatus("afk");
-  } else if (digitalRead(BTN_RED) == HIGH && !buttonPressed) {
+  } else if (digitalRead(BTN_RED) == LOW && !buttonPressed) {
     buttonPressed = true;
     ledcWrite(PWM_RED, waitingBrightness);
     emitStatus("dnd");
-  } else if (digitalRead(BTN_WHITE) == HIGH && !buttonPressed) {
+  } else if (digitalRead(BTN_WHITE) == LOW && !buttonPressed) {
     buttonPressed = true;
     ledcWrite(PWM_WHITE, waitingBrightness);
     emitStatus("invisible");
-  } else if (digitalRead(BTN_MICROPHONE) == HIGH && !buttonPressed) {
+  } else if (digitalRead(BTN_MICROPHONE) == LOW && !buttonPressed) {
     buttonPressed = true;
     if (microphoneMuted) {
-      microphoneMuted = false;
       ledcWrite(PWM_MICROPHONE, waitingBrightness);
-      emitMicrophoneStatus();
+      emitMicrophoneStatus(false);
     } else {
-      microphoneMuted = true;
       ledcWrite(PWM_MICROPHONE, waitingBrightness);
-      emitMicrophoneStatus();
+      emitMicrophoneStatus(true);
     }
-  } else if (digitalRead(BTN_HEADPHONE) == HIGH && !buttonPressed) {
+  } else if (digitalRead(BTN_HEADPHONE) == LOW && !buttonPressed) {
     buttonPressed = true;
     if (headphoneMuted) {
-      headphoneMuted = false;
       ledcWrite(PWM_HEADPHONE, waitingBrightness);
-      emitHeadphoneStatus();
+      emitHeadphoneStatus(false);
     } else {
-      headphoneMuted = true;
       ledcWrite(PWM_HEADPHONE, waitingBrightness);
-      emitHeadphoneStatus();
+      emitHeadphoneStatus(true);
     }
   }
 
-  if (!digitalRead(BTN_GREEN) && !digitalRead(BTN_YELLOW) && !digitalRead(BTN_RED) && !digitalRead(BTN_WHITE) && !digitalRead(BTN_MICROPHONE) && !digitalRead(BTN_HEADPHONE)) {
+  if (digitalRead(BTN_GREEN) && digitalRead(BTN_YELLOW) && digitalRead(BTN_RED) && digitalRead(BTN_WHITE) && digitalRead(BTN_MICROPHONE) && digitalRead(BTN_HEADPHONE)) {
     buttonPressed = false;
   }
 
