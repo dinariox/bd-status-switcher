@@ -125,18 +125,10 @@ if __name__ == '__main__':
     arduino = serial.Serial(port=selected_port, baudrate=BAUDRATE, timeout=SERIAL_TIMEOUT)
 
     thread1 = acceptArduinoUpdatesThread()
-    thread1.daemon = True
+    # thread1.daemon = True
     thread1.start()
 
     thread2 = checkDiscordStatusThread()
-    thread2.daemon = True
+    # thread2.daemon = True
     thread2.start()
-
-    input()
-
-    # Accept commands forever
-    # while True:
-    #     command = input('Enter a command: ')
-    #     value = write_read(arduino, command)
-    #     print('--> ' + value)
 # === END MAIN ===============================================================
