@@ -1,8 +1,8 @@
 # === IMPORTS =================================================================
 import sys
 import glob
-from turtle import delay
 import serial
+import serial.tools.list_ports
 import time
 import requests
 import threading
@@ -13,6 +13,7 @@ import threading
 BAUDRATE = 500000
 SERIAL_TIMEOUT = 1
 DISCORD_STATUS_UPDATE_INTERVAL = 0.5
+selected_port = None
 # === END GLOBAL VARIABLES ====================================================
 
 # === FUNCTIONS ===============================================================
@@ -51,25 +52,30 @@ def serial_ports():
 
 def acceptArduinoUpdates():
     while True:
-        data = arduino.readline()
-        if (data):
-            try:
-                data = data.decode('utf-8').rstrip()
-                
-                if (data.startswith('status')):
-                    status = data.split(" ")[1]
-                    print(f'Arduino requested: switch status to {status}')
-                    requests.post('http://localhost:5142/', json={'status': status}, timeout=3)
-                elif (data.startswith('microphoneMuted')):
-                    muted = data.split(" ")[1]
-                    print(f'Arduino requested: switch microphone muted to {muted}')
-                    requests.post('http://localhost:5142/', json={'microphoneMuted': muted}, timeout=3)
-                elif (data.startswith('headphoneMuted')):
-                    muted = data.split(" ")[1]
-                    print(f'Arduino requested: switch headphone muted to {muted}')
-                    requests.post('http://localhost:5142/', json={'headphoneMuted': muted}, timeout=3)
-            except:
-                pass
+        try:
+            data = arduino.readline()
+            if (data):
+                    data = data.decode('utf-8').rstrip()
+                    
+                    if (data.startswith('status')):
+                        status = data.split(" ")[1]
+                        print(f'Arduino requested: switch status to {status}')
+                        requests.post('http://localhost:5142/', json={'status': status}, timeout=3)
+                    elif (data.startswith('microphoneMuted')):
+                        muted = data.split(" ")[1]
+                        print(f'Arduino requested: switch microphone muted to {muted}')
+                        requests.post('http://localhost:5142/', json={'microphoneMuted': muted}, timeout=3)
+                    elif (data.startswith('headphoneMuted')):
+                        muted = data.split(" ")[1]
+                        print(f'Arduino requested: switch headphone muted to {muted}')
+                        requests.post('http://localhost:5142/', json={'headphoneMuted': muted}, timeout=3)
+        # except serial.serialutil.SerialException:
+        #     print('Lost connection to Arduino')
+        #     time.sleep(1)
+        #     arduino = serial.Serial(port=selected_port, baudrate=BAUDRATE, timeout=SERIAL_TIMEOUT)
+        #     pass
+        except:
+            pass
 
 class acceptArduinoUpdatesThread(threading.Thread):
     def __init__(self):
@@ -85,9 +91,10 @@ def checkDiscordStatus():
                 status = resp.json()['status']
                 microphoneMuted = resp.json()['microphoneMuted']
                 headphoneMuted = resp.json()['headphoneMuted']
-                # print(f'Current discord status: {status}, microphone muted: {"true" if microphoneMuted else "false"}, headphone muted: {"true" if headphoneMuted else "false"}')
+                print(f'Current discord status: {status}, microphone muted: {"true" if microphoneMuted else "false"}, headphone muted: {"true" if headphoneMuted else "false"}')
                 arduino.write(f'setstatus {status} {"true" if microphoneMuted else "false"} {"true" if headphoneMuted else "false"}'.encode())
         except:
+            print(f'Discord status not available')
             pass
         time.sleep(DISCORD_STATUS_UPDATE_INTERVAL)
     
@@ -101,18 +108,18 @@ class checkDiscordStatusThread(threading.Thread):
 # === MAIN ===================================================================
 if __name__ == '__main__':
     print('=== ARDUINO COMMUNICATION ===')
-    print('Detecting serial ports...')
+    print('Searching for Arduino...')
 
-    # Detect available serial ports and print them
-    ports = serial_ports()
-    for (port, name) in ports:
-        print(f'{port}: {name}')
-
-    # Ask user to select a port
-    selected_port = input('Select port: ')
-    while (selected_port not in [port[0] for port in ports]):
-        print('Invalid port!')
-        selected_port = input('Select port: ')
+    # Get all available serial ports and scan for Arduino
+    selected_port = None
+    while(selected_port == None):
+        ports = serial.tools.list_ports.comports()
+        for port, desc, hwid in sorted(ports):
+            if ("CP210x" in desc): # ESP32 contains "CP210x" in the description
+                selected_port = port
+                print(f'Found Arduino on {selected_port}')
+                break
+        time.sleep(1)
 
     # Open selected port
     arduino = serial.Serial(port=selected_port, baudrate=BAUDRATE, timeout=SERIAL_TIMEOUT)
